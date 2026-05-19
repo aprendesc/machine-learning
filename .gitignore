@@ -231,3 +231,7 @@ dev/
 tests/data/
 tests/models/
 
+# Agent and skill definitions (tooling config, not project decisions)
+.github/skills/
+.github/agents/
+
