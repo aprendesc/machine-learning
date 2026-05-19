@@ -216,3 +216,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ── Project-specific: results are not decisions ───────────────────────────────
+# Datasets (heavy, managed outside git — DVC, external storage, etc.)
+data/
+
+# Trained model artefacts (reproducible from code)
+models/
+
+# Developer workspace (exploration, dev scripts, personal notes)
+dev/
+
+# Test artefacts (generated locally, reproducible)
+tests/data/
+tests/models/
+
