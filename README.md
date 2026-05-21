@@ -26,6 +26,12 @@ uv run pytest tests/
 ./scripts/deploy.sh [app_name]
 ```
 
+## Apps
+
+| App | Description | README |
+|---|---|---|
+| `toy_models` | Titanic · MNIST · Yahoo Finance — three end-to-end ML pipelines with REST serving | [→ docs](machinelearning/apps/toy_models/README.md) |
+
 ## Adding an app
 
 1. Create `machine_learning/apps/<app_name>/`
