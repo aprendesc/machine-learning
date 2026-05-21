@@ -1,0 +1,86 @@
+checkpoint: 0
+model_type: CNN
+model_id: CNN_v1
+models_path: models/toy_models
+pipeline:
+  etl:
+  - class: eigenframework.modules.machine_learning.etl.etl_mnist.ETLMnist
+    params:
+      dataset_name: toy_models_mnist
+      n_samples: 10000
+      data_path: data
+  dataset_loader:
+    class: eigenframework.modules.machine_learning.transforms.dataset_loader.DatasetLoader
+    params:
+      data_path: data
+      dataset_name: toy_models_mnist
+      load_mmf: true
+  xy_split:
+    class: eigenframework.modules.machine_learning.transforms.xy_split.XYSplit
+    params:
+      target_column: label
+  spp:
+  - class: eigenframework.modules.machine_learning.transforms.identity.Identity
+    params: {}
+  validation_split:
+    class: eigenframework.modules.machine_learning.validation_split.basic_validation_split.BasicValidationSplit
+    params:
+      train_size: 0.8
+      val_size: 0.1
+      test_size: 0.1
+      stratify: true
+      split_seed: 42
+  dpp:
+  - class: eigenframework.modules.machine_learning.transforms.image_normalize.ImageNormalize
+    params:
+      mean:
+      - 0.1307
+      std:
+      - 0.3081
+      image_column: image_id
+  model:
+    class: eigenframework.modules.machine_learning.models.cnn_model.CNNModel
+    params:
+      input_channels: 1
+      image_size: 28
+      num_classes: 10
+      epochs: 15
+      batch_size: 64
+      learning_rate: 0.001
+      image_column: image_id
+  pos:
+  - class: eigenframework.modules.machine_learning.transforms.identity.Identity
+    params: {}
+  metrics:
+    class: eigenframework.modules.machine_learning.metrics.metrics_classification_regression.MetricsClassificationRegression
+    params:
+      mode: multiclassification
+      average: macro
+  model_loader:
+    class: eigenframework.modules.machine_learning.loaders.basic_model_loader.BasicModelLoader
+    params: {}
+  logger:
+    class: eigenframework.modules.machine_learning.utils.wandb_logging.WandbLogging
+    params:
+      project_name: toy_models
+      run_name: CNN_v1
+tuning:
+  n_trials: 30
+  metric: accuracy
+  direction: maximize
+  params:
+    pipeline.model.params.epochs:
+      type: int
+      low: 5
+      high: 30
+    pipeline.model.params.batch_size:
+      type: categorical
+      choices:
+      - 32
+      - 64
+      - 128
+    pipeline.model.params.learning_rate:
+      type: float
+      low: 0.0001
+      high: 0.01
+      log: true

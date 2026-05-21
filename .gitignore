@@ -219,10 +219,10 @@ __marimo__/
 
 # ── Project-specific: results are not decisions ───────────────────────────────
 # Datasets (heavy, managed outside git — DVC, external storage, etc.)
-data/
+/data/
 
 # Trained model artefacts (reproducible from code)
-models/
+/models/
 
 # Developer workspace (exploration, dev scripts, personal notes)
 dev/

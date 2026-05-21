@@ -1,0 +1,199 @@
+checkpoint: 0
+model_type: BlendingEnsemble
+model_id: BlendingEnsemble_v1
+models_path: models/toy_models
+pipeline:
+  etl:
+  - class: eigenframework.modules.machine_learning.etl.etl_dummy.ETLDummy
+    params:
+      dataset_name: titanic_dataset
+      output_dataset_name: toy_models_titanic
+  dataset_loader:
+    class: eigenframework.modules.machine_learning.transforms.dataset_loader.DatasetLoader
+    params:
+      data_path: data
+      dataset_name: toy_models_titanic
+      load_mmf: false
+  xy_split:
+    class: eigenframework.modules.machine_learning.transforms.xy_split.XYSplit
+    params:
+      target_column: target
+  spp:
+  - class: eigenframework.modules.machine_learning.transforms.titanic_feature_engineering.TitanicFeatureEngineering
+    params:
+      drop_columns:
+      - PassengerId
+      - Name
+      - Ticket
+      - Cabin
+  - class: eigenframework.modules.machine_learning.transforms.missing_value_imputer.MissingValueImputer
+    params:
+      columns:
+        Age:
+          strategy: group_median
+          group_by: Title
+          fill_value: 28.0
+        Fare:
+          strategy: median
+        Embarked:
+          strategy: mode
+  - class: eigenframework.modules.machine_learning.transforms.feature_selection.FeatureSelection
+    params:
+      selected_features:
+      - Pclass
+      - Sex
+      - Age
+      - SibSp
+      - Parch
+      - Fare
+      - Embarked
+      - Title
+      - FamilySize
+      - IsAlone
+      - Deck
+      - FareBin
+      - AgeBin
+  validation_split:
+    class: eigenframework.modules.machine_learning.validation_split.basic_validation_split.BasicValidationSplit
+    params:
+      train_size: 0.8
+      val_size: 0.1
+      test_size: 0.1
+      stratify: true
+      split_seed: 42
+  dpp:
+  - class: eigenframework.modules.machine_learning.transforms.feature_category_encoder.FeatureCategoryEncoder
+    params:
+      encoding_type: OrdinalEncoder
+      encoding_features:
+      - Sex
+      - Embarked
+      - Title
+      - Deck
+  - class: eigenframework.modules.machine_learning.transforms.feature_scaling.FeatureScaling
+    params:
+      scaling_type: StandardScaler
+      scaling_features:
+      - Age
+      - SibSp
+      - Parch
+      - Fare
+      - Pclass
+      - FamilySize
+      - IsAlone
+      - FareBin
+      - AgeBin
+  model:
+    class: eigenframework.modules.machine_learning.models.ensemble_model.BlendingEnsemble
+    params:
+      problem_mode: classification
+      base_models:
+      - class: machinelearning.modules.stages.models.ffnn_model.FFNNModel
+        params:
+          hidden_layers:
+          - 64
+          - 32
+          epochs: 100
+          batch_size: 32
+          learning_rate: 0.001
+          prediction_mode: predict_proba
+      - class: eigenframework.modules.machine_learning.models.lgbm_model.LGBMModel
+        params:
+          params_dict:
+            n_estimators: 300
+            learning_rate: 0.05
+            max_depth: 6
+            num_leaves: 31
+            verbose: -1
+          problem_mode: classification
+          prediction_mode: predict_proba
+      - class: eigenframework.modules.machine_learning.models.xgb_model.XGBModel
+        params:
+          params_dict:
+            n_estimators: 300
+            learning_rate: 0.05
+            max_depth: 6
+            objective: binary:logistic
+            verbosity: 0
+          problem_mode: classification
+          prediction_mode: predict_proba
+      meta_model:
+        class: eigenframework.modules.machine_learning.models.lgbm_model.LGBMModel
+        params:
+          params_dict:
+            n_estimators: 50
+            verbose: -1
+          problem_mode: classification
+  pos:
+  - class: eigenframework.modules.machine_learning.transforms.identity.Identity
+    params: {}
+  metrics:
+    class: eigenframework.modules.machine_learning.metrics.metrics_classification_regression.MetricsClassificationRegression
+    params:
+      mode: classification
+  model_loader:
+    class: eigenframework.modules.machine_learning.loaders.basic_model_loader.BasicModelLoader
+    params: {}
+  logger:
+    class: eigenframework.modules.machine_learning.utils.wandb_logging.WandbLogging
+    params:
+      project_name: toy_models
+      run_name: BlendingEnsemble_v1
+tuning:
+  n_trials: 50
+  metric: accuracy
+  direction: maximize
+  params:
+    pipeline.model.params.base_models[0].params.hidden_layers:
+      type: categorical
+      choices:
+      - - 64
+        - 32
+      - - 128
+        - 64
+      - - 128
+        - 64
+        - 32
+    pipeline.model.params.base_models[0].params.learning_rate:
+      type: float
+      low: 0.0005
+      high: 0.01
+      log: true
+    pipeline.model.params.base_models[0].params.epochs:
+      type: int
+      low: 50
+      high: 200
+    pipeline.model.params.base_models[1].params.params_dict.n_estimators:
+      type: int
+      low: 100
+      high: 500
+    pipeline.model.params.base_models[1].params.params_dict.learning_rate:
+      type: float
+      low: 0.01
+      high: 0.3
+      log: true
+    pipeline.model.params.base_models[1].params.params_dict.max_depth:
+      type: int
+      low: 3
+      high: 10
+    pipeline.model.params.base_models[1].params.params_dict.num_leaves:
+      type: int
+      low: 15
+      high: 63
+    pipeline.model.params.base_models[2].params.params_dict.n_estimators:
+      type: int
+      low: 100
+      high: 500
+    pipeline.model.params.base_models[2].params.params_dict.learning_rate:
+      type: float
+      low: 0.01
+      high: 0.3
+      log: true
+    pipeline.model.params.base_models[2].params.params_dict.max_depth:
+      type: int
+      low: 3
+      high: 10
+    pipeline.model.params.meta_model.params.params_dict.n_estimators:
+      type: int
+      low: 20
+      high: 100
