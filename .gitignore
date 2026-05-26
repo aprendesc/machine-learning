@@ -235,3 +235,4 @@ tests/models/
 .github/skills/
 .github/agents/
 
+/wandb/
