@@ -4,7 +4,7 @@ model_id: ARIMA_v1
 models_path: models/toy_models
 pipeline:
   etl:
-  - class: machinelearning.modules.stages.data.yahoo_finance_etl.YahooFinanceETL
+  - class: machinelearning.modules.time_series.yahoo_finance_etl.YahooFinanceETL
     params:
       ticker: AAPL
       period: 5y
@@ -17,12 +17,12 @@ pipeline:
       dataset_name: toy_models_yahoo
       load_mmf: false
   xy_split:
-    class: machinelearning.modules.stages.transforms.time_series_xy_split.TimeSeriesXYSplit
+    class: machinelearning.modules.time_series.time_series_xy_split.TimeSeriesXYSplit
     params:
       target_column: Close
       forecast_horizon: 1
   spp:
-  - class: machinelearning.modules.stages.transforms.time_series_fe.TimeSeriesFeatureEngineering
+  - class: machinelearning.modules.time_series.time_series_feature_engineering.TimeSeriesFeatureEngineering
     params:
       features:
       - sma_20
@@ -34,7 +34,7 @@ pipeline:
       - returns_1d
       - day_of_week
   validation_split:
-    class: machinelearning.modules.stages.validation_split.temporal_validation_split.TemporalValidationSplit
+    class: machinelearning.modules.time_series.temporal_validation_split.TemporalValidationSplit
     params:
       train_size: 0.7
       val_size: 0.15
@@ -43,7 +43,7 @@ pipeline:
   - class: eigenframework.modules.machine_learning.transforms.identity.Identity
     params: {}
   model:
-    class: machinelearning.modules.stages.models.arima_model.ARIMAModel
+    class: machinelearning.modules.time_series.arima_model.ARIMAModel
     params:
       order:
       - 5

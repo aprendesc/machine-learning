@@ -1,46 +1,36 @@
+"""Toy Models — Backend Facade
+
+Entry point for the Toy Models application.
+Delegates all logic to the ML orchestrator.
+"""
 
 import sys
-
-import pandas as pd
 from dotenv import load_dotenv
-
-from eigenframework.modules.machine_learning.utils import ConfigLoader
-from eigenframework.modules.machine_learning.pipelines.ml_pipeline import MLPipeline
 
 
 class Main:
-    def __init__(self, config_path: str):
+    """Facade del backend — delega toda la lógica en orquestadores."""
+
+    def __init__(self, config_path: str = "machinelearning/apps/toy_models/configs/titanic.yaml"):
         self.config_path = config_path
-        self.pipeline = None
-        self.config = None
+        self.orchestrator = None
 
-    def initialize(self):
-        self.config = ConfigLoader.load(self.config_path)
-        self.pipeline = MLPipeline(self.config)
-        self.pipeline.initialize()
+    def initialize(self, **kwargs) -> None:
+        from machinelearning.apps.toy_models.orchestrators.ml_orchestrator import MLOrchestrator
+        self.orchestrator = MLOrchestrator(self.config_path)
+        self.orchestrator.initialize()
 
-    def etl(self):
-        self.pipeline.etl()
+    def etl(self, **kwargs):
+        return self.orchestrator.etl(**kwargs)
 
-    def train(self, **kwargs) -> pd.DataFrame:
-        return self.pipeline.train()
+    def train(self, **kwargs):
+        return self.orchestrator.train(**kwargs)
 
-    def predict(self, X, **kwargs) -> pd.DataFrame:
-        if isinstance(X, dict):
-            X = pd.DataFrame(X)
-        return self.pipeline.predict(X)
+    def predict(self, X, **kwargs):
+        return self.orchestrator.predict(X, **kwargs)
 
-    def tune(self, n_trials: int = 50, **kwargs) -> tuple:
-        tuning_config = self.config.get("tuning", {})
-        n_trials = tuning_config.get("n_trials", n_trials)
-        metric = tuning_config.get("metric", "accuracy")
-        hparam_config = tuning_config.get("params", {})
-        return self.pipeline.hparam_tuning(
-            hparam_config=hparam_config,
-            n_trials=n_trials,
-            metric=metric,
-            **kwargs,
-        )
+    def tune(self, **kwargs) -> tuple:
+        return self.orchestrator.tune(**kwargs)
 
 
 if __name__ == "__main__":
@@ -70,4 +60,3 @@ if __name__ == "__main__":
         main.etl()
         result = main.train()
         print(f"✓ smoke test completado: {result}")
-
