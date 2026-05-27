@@ -5,7 +5,6 @@ Delegates all logic to the ML orchestrator.
 """
 
 import sys
-from dotenv import load_dotenv
 
 
 class Main:
@@ -27,6 +26,9 @@ class Main:
         return self.orchestrator.train(**kwargs)
 
     def predict(self, X, **kwargs):
+        import pandas as pd
+        if isinstance(X, (dict, list)):
+            X = pd.DataFrame(X)
         return self.orchestrator.predict(X, **kwargs)
 
     def tune(self, **kwargs) -> tuple:
@@ -34,7 +36,11 @@ class Main:
 
 
 if __name__ == "__main__":
-    load_dotenv()
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass  # dotenv not required in cluster environments
     config = sys.argv[1] if len(sys.argv) > 1 else "machinelearning/apps/toy_models/configs/titanic.yaml"
     main = Main(config)
     main.initialize()
